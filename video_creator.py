@@ -32,7 +32,7 @@ class VideoCreator:
                     audio_path, 
                     output_path, 
                     transition_duration=2,
-                    transition_effect='fade',
+                    transition_effect='zoom_in',
                     resolution=(1920, 1080),
                     fps=30,
                     bitrate="8000k"):
