@@ -1,0 +1,8 @@
+moviepy,
+google_images_download,
+pyttsx3,
+gTTS,
+nltk,
+spacy,
+tqdm,
+requests
