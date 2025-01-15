@@ -1,0 +1,10 @@
+{
+    "unsplash_api_key": "YOUR_UNSPLASH_API_KEY",
+    "output_folder": "output",
+    "temp_folder": "temp",
+    "image_duration": 5,
+    "video_resolution": [1080, 1920],
+    "image_quality": "high",
+    "transition_duration": 1,
+    "keep_temp_files": false
+}
