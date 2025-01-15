@@ -167,7 +167,7 @@ class ScriptToVideo:
             download_results = self.image_downloader.download_batch(
                 keywords[:images_needed],  # Use only as many keywords as needed
                 images_per_keyword=1,
-                source="both",
+                source="google",
                 orientation="vertical"
             )
             

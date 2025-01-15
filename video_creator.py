@@ -1,0 +1,158 @@
+import os
+from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, CompositeVideoClip
+#from moviepy.video.fx.transition_sequence import TransitionSequence----- no longer supported
+from moviepy.video.fx import FadeOut, FadeIn
+import glob
+from PIL import Image
+from tqdm import tqdm
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+class VideoCreator:
+    # Supported image formats
+    SUPPORTED_FORMATS = ('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp')
+    
+    # Available transition effects
+    TRANSITIONS = {
+        'fade': lambda clip: (fadein(clip, 0.5), fadeout(clip, 0.5)),
+        'slide_left': lambda clip: clip.set_position(lambda t: (max(0, 500-1000*t), 0)),
+        'slide_right': lambda clip: clip.set_position(lambda t: (min(0, -500+1000*t), 0)),
+        'zoom_in': lambda clip: clip.resize(lambda t: 1 + 0.5*t),
+        'zoom_out': lambda clip: clip.resize(lambda t: 2 - 0.5*t)
+    }
+    
+    def __init__(self):
+        self.progress_bar = None
+    
+    def create_video(self, 
+                    image_folder, 
+                    audio_path, 
+                    output_path, 
+                    transition_duration=2,
+                    transition_effect='fade',
+                    resolution=(1920, 1080),
+                    fps=30,
+                    bitrate="8000k"):
+        """
+        Create a video from images and audio with enhanced features.
+        
+        Parameters:
+        image_folder (str): Path to folder containing images
+        audio_path (str): Path to WAV audio file
+        output_path (str): Path where the output MP4 will be saved
+        transition_duration (int): Duration for each image in seconds
+        transition_effect (str): Type of transition ('fade', 'slide_left', 'slide_right', 'zoom_in', 'zoom_out')
+        resolution (tuple): Output video resolution (width, height)
+        fps (int): Frames per second
+        bitrate (str): Video bitrate (higher = better quality)
+        """
+        try:
+            logger.info("Starting video creation process...")
+            
+            # Load audio and get its duration
+            logger.info("Loading audio file...")
+            audio = AudioFileClip(audio_path)
+            audio_duration = audio.duration
+            
+            # Get list of all supported images in the folder
+            image_files = []
+            for format in self.SUPPORTED_FORMATS:
+                image_files.extend(glob.glob(os.path.join(image_folder, f"*{format}")))
+            
+            if not image_files:
+                raise ValueError(f"No supported images found. Supported formats: {self.SUPPORTED_FORMATS}")
+            
+            # Sort images to ensure consistent ordering
+            image_files.sort()
+            logger.info(f"Found {len(image_files)} images")
+            
+            # Create progress bar for image processing
+            self.progress_bar = tqdm(total=len(image_files), desc="Processing images")
+            
+            # Create video clips from images with transitions
+            image_clips = []
+            for image_path in image_files:
+                # Verify image and resize to target resolution
+                with Image.open(image_path) as img:
+                    # Create video clip from image
+                    clip = (ImageClip(image_path)
+                           .set_duration(transition_duration)
+                           .resize(width=resolution[0], height=resolution[1]))
+                    
+                    # Apply transition effect
+                    if transition_effect in self.TRANSITIONS:
+                        clip = self.TRANSITIONS[transition_effect](clip)
+                    
+                    image_clips.append(clip)
+                    self.progress_bar.update(1)
+            
+            self.progress_bar.close()
+            logger.info("Compositing video clips...")
+            
+            # Concatenate all image clips
+            final_clip = concatenate_videoclips(image_clips, method="compose")
+            
+            # If video is shorter than audio, loop the video
+            if final_clip.duration < audio_duration:
+                n_loops = int(audio_duration / final_clip.duration) + 1
+                logger.info(f"Looping video {n_loops} times to match audio duration")
+                final_clip = concatenate_videoclips([final_clip] * n_loops)
+            
+            # Trim video to match audio duration
+            final_clip = final_clip.subclip(0, audio_duration)
+            
+            # Set audio
+            final_clip = final_clip.set_audio(audio)
+            
+            logger.info("Writing output file... This may take a while.")
+            # Write output file with progress bar
+            final_clip.write_videofile(
+                output_path,
+                fps=fps,
+                codec='libx264',
+                audio_codec='aac',
+                bitrate=bitrate,
+                logger=None  # Disable moviepy's logger as we're using our own
+            )
+            
+            # Clean up
+            final_clip.close()
+            audio.close()
+            
+            logger.info(f"Video successfully created at: {output_path}")
+            
+        except Exception as e:
+            logger.error(f"An error occurred: {str(e)}")
+            raise
+        
+def print_supported_features():
+    """Print all supported features and options."""
+    print("\nSupported Features:")
+    print(f"Image Formats: {', '.join(VideoCreator.SUPPORTED_FORMATS)}")
+    print(f"Transition Effects: {', '.join(VideoCreator.TRANSITIONS.keys())}")
+    print("\nQuality Options:")
+    print("Resolution: Any width x height (default: 1920x1080)")
+    print("FPS: Any value (default: 30)")
+    print("Bitrate: Any value (default: 8000k)")
+
+if __name__ == "__main__":
+    # Example usage with all features
+    creator = VideoCreator()
+    
+    # Print supported features
+    print_supported_features()
+    
+    # Create video with all enhanced features
+    creator.create_video(
+        image_folder="./images",
+        audio_path="./audio.wav",
+        output_path="./output.mp4",
+        transition_duration=2,
+        transition_effect='fade',
+        resolution=(1920, 1080),
+        fps=30,
+        bitrate="8000k"
+    )
