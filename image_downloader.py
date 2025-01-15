@@ -72,7 +72,7 @@ class ImageDownloader:
                 "size": ">2MP",  # High quality images
                 "aspect_ratio": "tall" if orientation == "vertical" else "wide",
                 "output_directory": self.image_folder,
-                "image_directory": keyword,
+                
                 "no_directory": True,
                 "silent_mode": True,
                 "prefix": f"google_{keyword}_"

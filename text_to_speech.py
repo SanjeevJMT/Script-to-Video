@@ -106,12 +106,12 @@ class TextToSpeechGenerator:
             print(f"Detected/Forced language: {language}")
             
             # For Hindi text, use gTTS (better Hindi support)
-            if language == 'hi':
-                return self.generate_audio_gtts(text, 'hi', output_path)
+            #if language == 'hi':
+            return self.generate_audio_gtts(text, 'en', output_path)
             
-            # For English, use pyttsx3 (better voice gender control)
-            else:
-                return self.generate_audio_pyttsx3(text, voice_gender, output_path)
+            # # For English, use pyttsx3 (better voice gender control)
+            # else:
+            #     return self.generate_audio_pyttsx3(text, voice_gender, output_path)
                 
         except Exception as e:
             return False, f"Error in speech generation: {str(e)}"

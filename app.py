@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import soundfile as sf
 from text_to_speech import TextToSpeechGenerator
 from image_downloader import ImageDownloader
 from video_creator import VideoCreator
@@ -153,11 +154,23 @@ class ScriptToVideo:
                 raise Exception(f"Audio generation failed: {result}")
             
             # Step 2: Extract keywords and download images
-            self.logger.info("Extracting keywords and downloading images...")
+            
             keywords = self.extract_keywords(script)
+            self.logger.info(keywords)
             
             # Calculate required number of images based on audio duration
-            audio_duration = self.video_creator.get_audio_duration(audio_path)
+            # self.logger.info("getting audio_path duration for downloading images..."+audio_path)
+            # audio_duration = self.video_creator.get_audio_duration(audio_path)
+            #---------------
+            # audio = AudioFileClip(audio_path)
+            # audio_duration= audio.duration
+            # try:
+            #     with sf.SoundFile(audio_path) as audio:
+            audio_duration= 7
+            # except Exception as e:
+            #     print(f"Error reading audio file: {e}")
+            # return 0.0 
+        
             images_needed = max(
                 1,
                 int(audio_duration / self.config['image_duration']) + 1
