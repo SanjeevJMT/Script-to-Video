@@ -166,7 +166,7 @@ class ScriptToVideo:
             # audio_duration= audio.duration
             # try:
             #     with sf.SoundFile(audio_path) as audio:
-            audio_duration= 7
+            audio_duration= len(keywords)
             # except Exception as e:
             #     print(f"Error reading audio file: {e}")
             # return 0.0 
@@ -177,11 +177,10 @@ class ScriptToVideo:
             )
             
             # Download images
-            download_results = self.image_downloader.download_batch(
+            download_results = self.image_downloader.download_images(
                 keywords[:images_needed],  # Use only as many keywords as needed
-                images_per_keyword=1,
-                source="google",
-                orientation="vertical"
+                num_results_per_term=1,
+                max_retries=5
             )
             
             if download_results['successful_downloads'] == 0:
