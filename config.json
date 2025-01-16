@@ -1,5 +1,5 @@
 {
-    "unsplash_api_key": "YOUR_UNSPLASH_API_KEY",
+    
     "output_folder": "output",
     "temp_folder": "temp",
     "image_duration": 2,

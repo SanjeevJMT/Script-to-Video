@@ -1,7 +1,6 @@
 import os
 import sys
 import argparse
-import soundfile as sf
 from text_to_speech import TextToSpeechGenerator
 from image_downloader import ImageDownloader
 from video_creator import VideoCreator
@@ -13,6 +12,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 import shutil
+import traceback
 
 class ScriptToVideo:
     def __init__(self, config_path='config.json'):
@@ -53,7 +53,7 @@ class ScriptToVideo:
         except FileNotFoundError:
             self.logger.warning("Config file not found. Using default settings.")
             self.config = {
-                "unsplash_api_key": "",
+                
                 "output_folder": "output",
                 "temp_folder": "temp",
                 "image_duration": 5,
@@ -86,9 +86,7 @@ class ScriptToVideo:
             
             # Initialize other components
             self.speech_generator = TextToSpeechGenerator()
-            self.image_downloader = ImageDownloader(
-                unsplash_api_key=self.config.get('unsplash_api_key')
-            )
+            self.image_downloader = ImageDownloader()
             self.video_creator = VideoCreator()
             
             self.logger.info("All components initialized successfully")
@@ -183,11 +181,11 @@ class ScriptToVideo:
                 max_retries=5
             )
             
-            if download_results['successful_downloads'] == 0:
-                raise Exception("No images were downloaded successfully")
+            #if download_results['successful_downloads'] == 0:
+             #   raise Exception("No images were downloaded successfully")
             
             # Step 3: Create video
-            self.logger.info("Creating final video...")
+            self.logger.info("Finally creating video...")
             self.video_creator.create_video(
                 image_folder=self.folders['images'],
                 audio_path=audio_path,
@@ -206,7 +204,7 @@ class ScriptToVideo:
             return output_video
             
         except Exception as e:
-            self.logger.error(f"Video creation failed: {str(e)}")
+            self.logger.error(f"Video creation failed in {traceback.extract_tb(e.__traceback__)[0]}:\n{str(e.__cause__)}") 
             raise
 
 def main():

@@ -1,11 +1,12 @@
 import os
-from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, CompositeVideoClip
+from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips, CompositeVideoClip
 #from moviepy.video.fx.transition_sequence import TransitionSequence----- no longer supported
-from moviepy.video.fx import FadeOut, FadeIn
+#from moviepy.video.fx import FadeOut, FadeIn
 import glob
 from PIL import Image
 from tqdm import tqdm
 import logging
+import traceback
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -17,7 +18,7 @@ class VideoCreator:
     
     # Available transition effects
     TRANSITIONS = {
-        'fade': lambda clip: (fadein(clip, 0.5), fadeout(clip, 0.5)),
+        #'fade': lambda clip: (FadeIn(clip, 0.5), FadeOut(clip, 0.5)),
         'slide_left': lambda clip: clip.set_position(lambda t: (max(0, 500-1000*t), 0)),
         'slide_right': lambda clip: clip.set_position(lambda t: (min(0, -500+1000*t), 0)),
         'zoom_in': lambda clip: clip.resize(lambda t: 1 + 0.5*t),
@@ -33,7 +34,7 @@ class VideoCreator:
                     output_path, 
                     transition_duration=2,
                     transition_effect='zoom_in',
-                    resolution=(1920, 1080),
+                    resolution=(1080, 1920),
                     fps=30,
                     bitrate="8000k"):
         """
@@ -70,26 +71,40 @@ class VideoCreator:
             logger.info(f"Found {len(image_files)} images")
             
             # Create progress bar for image processing
-            self.progress_bar = tqdm(total=len(image_files), desc="Processing images")
+            progress_bar = tqdm(total=len(image_files), desc="Processing images")
             
             # Create video clips from images with transitions
             image_clips = []
             for image_path in image_files:
                 # Verify image and resize to target resolution
                 with Image.open(image_path) as img:
-                    # Create video clip from image
-                    clip = (ImageClip(image_path)
-                           .set_duration(transition_duration)
-                           .resize(width=resolution[0], height=resolution[1]))
+                    img = img.resize(resolution, Image.LANCZOS)
+                    # Extract the base name of the image file
+                    base_name = os.path.basename(image_path)
+                    # Create the new path in the temp/images directory
+                    resized_image_path = os.path.join('temp/images', 'resized_' + base_name)
+                    # Save the resized image to the new path
+                    img.save(resized_image_path)
+                # Create video clip from image
+                logger.info("Creating video clip from image...")
+                clip = ImageClip(resized_image_path).set_duration(transition_duration)  # Set duration for each image
+                image_clips.append(clip)
                     
-                    # Apply transition effect
-                    if transition_effect in self.TRANSITIONS:
-                        clip = self.TRANSITIONS[transition_effect](clip)
-                    
-                    image_clips.append(clip)
-                    self.progress_bar.update(1)
+                # Update the progress bar
+                progress_bar.update(1)
+
+            # Close the progress bar
+            progress_bar.close()
+                
+            # Create transition clips (e.g., crossfade)
+            transition_duration = 1  # Duration of the transition between clips
+            final_clips = []
+            for i in range(len(image_clips) - 1):
+                final_clips.append(image_clips[i])
+                transition = image_clips[i].crossfadein(transition_duration)
+                final_clips.append(transition)       
+            final_clips.append(image_clips[-1])  # Add the last image clip
             
-            self.progress_bar.close()
             logger.info("Compositing video clips...")
             
             # Concatenate all image clips
