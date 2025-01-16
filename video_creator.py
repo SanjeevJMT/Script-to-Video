@@ -58,6 +58,7 @@ class VideoCreator:
             audio = AudioFileClip(audio_path)
             audio_duration = audio.duration
             
+
             # Get list of all supported images in the folder
             image_files = []
             for format in self.SUPPORTED_FORMATS:
@@ -69,6 +70,7 @@ class VideoCreator:
             # Sort images to ensure consistent ordering
             image_files.sort()
             logger.info(f"Found {len(image_files)} images")
+            image_duration= audio_duration/len(image_files)
             
             # Create progress bar for image processing
             progress_bar = tqdm(total=len(image_files), desc="Processing images")
@@ -79,6 +81,7 @@ class VideoCreator:
                 # Verify image and resize to target resolution
                 with Image.open(image_path) as img:
                     img = img.resize(resolution, Image.LANCZOS)
+                    img=img.convert('RGB')  # Convert to RGB mode
                     # Extract the base name of the image file
                     base_name = os.path.basename(image_path)
                     # Create the new path in the temp/images directory
@@ -86,8 +89,8 @@ class VideoCreator:
                     # Save the resized image to the new path
                     img.save(resized_image_path)
                 # Create video clip from image
-                logger.info("Creating video clip from image...")
-                clip = ImageClip(resized_image_path).set_duration(transition_duration)  # Set duration for each image
+                logger.info("Creating video clip from image..."+resized_image_path)
+                clip = ImageClip(resized_image_path).set_duration(image_duration)  # Set duration for each image
                 image_clips.append(clip)
                     
                 # Update the progress bar
@@ -140,7 +143,7 @@ class VideoCreator:
             logger.info(f"Video successfully created at: {output_path}")
             
         except Exception as e:
-            logger.error(f"An error occurred: {str(e)}")
+            logger.error(f"Video creator: An error occurred: in {traceback.extract_tb(e.__traceback__)[0]}:\n{str(e)}") 
             raise
         
 def print_supported_features():

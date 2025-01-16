@@ -152,27 +152,30 @@ class ScriptToVideo:
                 raise Exception(f"Audio generation failed: {result}")
             
             # Step 2: Extract keywords and download images
+            words = script.split()
+            total_words = len(words)
             
-            keywords = self.extract_keywords(script)
+            # Calculate the number of keywords
+            full_keywords_count = total_words // 5
+            remaining_words_count = total_words % 5
+            
+            # Initialize an empty list to store the keywords
+            keywords = []
+            
+            # Generate keywords for every 5 words
+            for i in range(full_keywords_count):
+                keyword = ' '.join(words[i * 5:(i + 1) * 5])
+                keywords.append(keyword)
+            
+            # Generate a keyword for remaining words if any
+            if remaining_words_count > 0:
+                keyword = ' '.join(words[full_keywords_count * 5:])
+                keywords.append(keyword)
+            
             self.logger.info(keywords)
-            
-            # Calculate required number of images based on audio duration
-            # self.logger.info("getting audio_path duration for downloading images..."+audio_path)
-            # audio_duration = self.video_creator.get_audio_duration(audio_path)
-            #---------------
-            # audio = AudioFileClip(audio_path)
-            # audio_duration= audio.duration
-            # try:
-            #     with sf.SoundFile(audio_path) as audio:
-            audio_duration= len(keywords)
-            # except Exception as e:
-            #     print(f"Error reading audio file: {e}")
-            # return 0.0 
-        
-            images_needed = max(
-                1,
-                int(audio_duration / self.config['image_duration']) + 1
-            )
+                      
+                           
+            images_needed = len(keywords)
             
             # Download images
             download_results = self.image_downloader.download_images(

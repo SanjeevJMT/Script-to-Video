@@ -23,8 +23,9 @@ class ImageDownloader:
             max_retries: Maximum number of retries for failed downloads.
         """
 
-        for term in search_terms:
-            url = f"https://www.google.com/search?q={term}&tbm=isch"
+        for idx, term in enumerate(search_terms, 1):
+            hd_term=term+ " HD image portrait"
+            url = f"https://www.google.com/search?q={hd_term}&tbm=isch"
             response = requests.get(url, headers=self.headers)
             soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -38,11 +39,11 @@ class ImageDownloader:
                     pass
 
             if not image_urls:
-                print(f"No images found for: {term}")
+                print(f"No images found for: {hd_term}")
                 continue
 
             for i, img_url in enumerate(image_urls[:num_results_per_term]):
-                filename = f'{term}_{i+1}.jpg'
+                filename = f'{idx:02d}.jpg'
                 filepath = os.path.join('temp', 'images', filename) 
                 retries = 0
 
