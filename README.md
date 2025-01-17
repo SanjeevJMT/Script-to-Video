@@ -99,7 +99,7 @@ python app.py --script "Your script text here" --voice male --language en
 ```
 or
 ```
-python app.py --script prompt.txt --voice male --language en
+python app.py --script prompt.txt --method video --voice male --language en
 ```
 
 2. Using a script file:

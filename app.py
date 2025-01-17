@@ -4,6 +4,7 @@ import argparse
 from text_to_speech import TextToSpeechGenerator
 from image_downloader import ImageDownloader
 from video_creator import VideoCreator
+from video_downloader import VideoDownloader
 import nltk
 from nltk.tokenize import sent_tokenize
 import spacy
@@ -88,6 +89,7 @@ class ScriptToVideo:
             self.speech_generator = TextToSpeechGenerator()
             self.image_downloader = ImageDownloader()
             self.video_creator = VideoCreator()
+            self.video_downloader = VideoDownloader()
             
             self.logger.info("All components initialized successfully")
         except Exception as e:
@@ -183,6 +185,9 @@ class ScriptToVideo:
                 num_results_per_term=1,
                 max_retries=5
             )
+
+            # Download pexel videoClips
+            #pexel_videos = self.video_downloader.download_videos(keywords)
             
             #if download_results['successful_downloads'] == 0:
              #   raise Exception("No images were downloaded successfully")
@@ -213,6 +218,7 @@ class ScriptToVideo:
 def main():
     parser = argparse.ArgumentParser(description='Create video from script')
     parser.add_argument('--script', type=str, help='Script text or path to script file')
+    parser.add_argument('--method', choices=['video', 'image'], default='image', help='video/image for video creation')
     parser.add_argument('--voice', choices=['male', 'female'], default='male',
                       help='Voice gender for text-to-speech')
     parser.add_argument('--language', choices=['en', 'hi'], default='en',

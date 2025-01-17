@@ -1,5 +1,1 @@
-ISRO's Successful Docking Experiment: The Indian Space Research Organisation (ISRO) successfully conducted a docking experiment, a significant step towards building a space station.   
-Cold Wave in North India: Temperatures have plummeted across north India, with people waking up to light rain in Delhi.   
-Saif Ali Khan Attack: Actor Saif Ali Khan was stabbed multiple times at his residence in Mumbai. The attacker has been identified and detained.   
-CBI Investigation: The Central Bureau of Investigation (CBI) has booked six Prasar Bharati officials and an I&B Ministry Deputy Secretary for alleged corruption.   
-Political News: Various political developments are ongoing, including the ongoing election season in several states.
+hi tech friends Michael comesss here I'm going to go through a workflow I've been using for a few years now on how to get my scripted content to get the captions timed so you can use that timed caption file in any other NLE or for online distribution so let's go through the steps it's actually pretty easy first thing we're going to do is take our finished cut make sure the ins and outs 
