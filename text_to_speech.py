@@ -1,4 +1,5 @@
 import pyttsx3
+import edge_tts
 from gtts import gTTS
 import os
 from deep_translator import GoogleTranslator
@@ -107,7 +108,7 @@ class TextToSpeechGenerator:
             
             # For Hindi text, use gTTS (better Hindi support)
             #if language == 'hi':
-            return self.generate_audio_gtts(text, 'en', output_path)
+            return self.generate_audio_edgetts(text,  output_path)
             
             # # For English, use pyttsx3 (better voice gender control)
             # else:
@@ -115,6 +116,9 @@ class TextToSpeechGenerator:
                 
         except Exception as e:
             return False, f"Error in speech generation: {str(e)}"
+    async def generate_audio_edgetts(text,outputFilename):
+            communicate = edge_tts.Communicate(text,"hi-IN-SwaraNeural")
+            await communicate.save(outputFilename)
 
 def main():
     # Example usage
