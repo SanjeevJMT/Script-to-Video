@@ -6,7 +6,7 @@
     "video_resolution": [1080, 1920],
     "image_quality": "high",
     "transition_duration": 1,
-    "keep_temp_files": true,
+    "keep_temp_files": false,
     "api_url": "https://api.pexels.com/videos/search",
     "api_key": "pl2zWLmblJ79LaaTWzfjXPqblcJQF4FHciA9ugNwDhLlsWh1lXhskrwk"
      

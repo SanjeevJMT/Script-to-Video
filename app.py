@@ -115,7 +115,7 @@ class ScriptToVideo:
         
         return keywords
         
-    def create_video(self, script, voice_gender='male', language='en'):
+    def create_video(self, script, method='image', topic='',voice_gender='male', language='en'):
         """
         Create a video from the given script
         
@@ -179,28 +179,48 @@ class ScriptToVideo:
                            
             images_needed = len(keywords)
             
-            # Download images
-            download_results = self.image_downloader.download_images(
-                keywords[:images_needed],  # Use only as many keywords as needed
-                num_results_per_term=1,
-                max_retries=5
-            )
+            if method=='image':
+                # Download images
+                download_results = self.image_downloader.download_images(
+                    keywords[:images_needed],  # Use only as many keywords as needed
+                    num_results_per_term=1,
+                    max_retries=5
+                )
+                # if download_results['successful_downloads'] == 0:
+                #     raise Exception("No images were downloaded successfully")
+            
+                # Step 3: Create video
+                self.logger.info("Finally creating video...")
+                
+                self.video_creator.create_image_video(
+                    image_folder=self.folders['images'],
+                    audio_path=audio_path,
+                    output_path=output_video,
+                    transition_duration=self.config['transition_duration'],
+                    resolution=self.config['video_resolution']
+                )
+            elif method=='video':
+                # Download pexel videoClips
+                download_results = self.video_downloader.download_videos(keywords) 
+            else :
+                #Download AI Image
+                self.image_downloader.create_images(keywords , topic)
 
-            # Download pexel videoClips
-            #pexel_videos = self.video_downloader.download_videos(keywords)
+
+                # Step 3: Create video
+                self.logger.info("Finally creating video...")
+                
+                self.video_creator.create_image_video(
+                    image_folder=self.folders['images'],
+                    audio_path=audio_path,
+                    output_path=output_video,
+                    transition_duration=self.config['transition_duration'],
+                    resolution=self.config['video_resolution']
+                ) 
+
             
-            #if download_results['successful_downloads'] == 0:
-             #   raise Exception("No images were downloaded successfully")
             
-            # Step 3: Create video
-            self.logger.info("Finally creating video...")
-            self.video_creator.create_video(
-                image_folder=self.folders['images'],
-                audio_path=audio_path,
-                output_path=output_video,
-                transition_duration=self.config['transition_duration'],
-                resolution=self.config['video_resolution']
-            )
+            
             
             # Step 4: Cleanup temporary files
             if not self.config.get('keep_temp_files', False):
@@ -218,7 +238,8 @@ class ScriptToVideo:
 def main():
     parser = argparse.ArgumentParser(description='Create video from script')
     parser.add_argument('--script', type=str, help='Script text or path to script file')
-    parser.add_argument('--method', choices=['video', 'image'], default='image', help='video/image for video creation')
+    parser.add_argument('--method', choices=['video', 'image'], default='AIimage', help='video/image for video creation')
+    parser.add_argument('--topic', type=str, default='', help='topic of script for  video creation')
     parser.add_argument('--voice', choices=['male', 'female'], default='male',
                       help='Voice gender for text-to-speech')
     parser.add_argument('--language', choices=['en', 'hi'], default='en',
@@ -242,6 +263,8 @@ def main():
         # Create video
         output_video = creator.create_video(
             script,
+            method=args.method,
+            topic=args.topic,
             voice_gender=args.voice,
             language=args.language
         )

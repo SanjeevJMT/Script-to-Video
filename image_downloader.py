@@ -12,7 +12,20 @@ class ImageDownloader:
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
         }
-
+    def create_images(self, prompts, topic):
+        width=1080
+        height=1920
+        model='flux' 
+        seed=None
+        for idx, prompt in enumerate(prompts, 1):
+            prompt = topic+" "+prompt
+            url = f"https://image.pollinations.ai/prompt/{prompt}?width={width}&height={height}&model={model}&seed={seed}"
+            response = requests.get(url)
+            filename = f'{idx:02d}.jpg'
+            filepath = os.path.join('temp', 'images', filename) 
+            with open(filepath, 'wb') as file:
+                file.write(response.content)
+                print(f"created using POllinationAI: {filepath}")
     def download_images(self, search_terms, num_results_per_term=1, max_retries=5):
         """
         Downloads images for given search terms.

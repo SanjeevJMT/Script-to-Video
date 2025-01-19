@@ -108,7 +108,7 @@ class TextToSpeechGenerator:
             
             # For Hindi text, use gTTS (better Hindi support)
             #if language == 'hi':
-            return self.generate_audio_edgetts(text,  output_path)
+            return self.generate_audio_gtts(text, 'en' , output_path)
             
             # # For English, use pyttsx3 (better voice gender control)
             # else:
