@@ -44,11 +44,11 @@ class ImageDownloader:
             print(f"\nSearching for '{hd_term}'...")
             
             # Get image URLs
-            urls = get_image_urls(hd_term)
+            urls = self.get_image_urls(hd_term)
             
             if urls:
                 print("\nVerifying URLs...")
-                verified_urls = verify_image_urls(urls)
+                verified_urls = self.verify_image_urls(urls)
 
                 #create file name
                 filename = f'{idx:02d}_{term}.jpg'
@@ -100,7 +100,7 @@ class ImageDownloader:
         
         try:
             # Make the request
-            print("Fetching search results...")
+            print("Fetching search results..." +search_url)
             response = requests.get(search_url, headers=headers, timeout=10)
             response.raise_for_status()
             
