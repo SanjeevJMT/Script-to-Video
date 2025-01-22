@@ -11,9 +11,7 @@ class ImageDownloader:
     """
 
     def __init__(self):
-        self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
-        }
+         self.image_urls = []
     def create_images(self, prompts, topic):
         width=1080
         height=1920
@@ -37,45 +35,41 @@ class ImageDownloader:
             num_results_per_term: Number of images to download per term.
             max_retries: Maximum number of retries for failed downloads.
         """
-
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Connection': 'keep-alive',
+        }
+        
         for idx, term in enumerate(search_terms, 1):
-            hd_term=term+ " HD vertical image "
+            keyword =term+ " HD vertical image "
             
-            print(f"\nSearching for '{hd_term}'...")
+            print(f"\nSearching for '{keyword}'...")
             
-            # Get image URLs
-            urls = self.get_image_urls(hd_term)
-            
-            if urls:
-                print("\nVerifying URLs...")
-                verified_urls = self.verify_image_urls(urls)
+            # Get verified image URLs
+            verified_urls = self.verify_image_urls(self.get_image_urls(keyword))
 
+            if verified_urls:
                 #create file name
                 filename = f'{idx:02d}_{term}.jpg'
                 filepath = os.path.join('temp', 'images', filename) 
                 retries = 0
-                
                 #Download Image 
                 try:
-                    response = requests.get(verified_urls[0], headers=self.headers)
+                    response = requests.get(verified_urls[0], headers=headers)
                     response.raise_for_status()
                     with open(filepath, 'wb') as f:
                         f.write(response.content)
                     print(f"Downloaded: {filepath}")
-                    break
+                    
                 except Exception as e:
                         print(f"Error downloading {verified_urls[0]}: {e}")
-                        retries += 1
-                        time.sleep(2)  # Wait for a short time before retrying
-
-                
-                #print(f"\nTop {len(verified_urls)} verified image URLs for '{search_term}':")
-                #for i, url in enumerate(verified_urls, 1):
-                    #print(f"{i}. {url}")
             else:
-                print("No image URLs found.")
-            #########
-    def get_image_urls(query, num_images=5):
+                print(f"No Verified image URLs found")
+
+
+    def get_image_urls(self, keyword, num_images=5):
         """
         Get image URLs directly from Google Images
         
@@ -86,9 +80,10 @@ class ImageDownloader:
         Returns:
             list: List of image URLs
         """
-        
+        print("keyword for search is - "+keyword)
         # Format the search URL
-        search_url = f"https://www.google.com/search?q={query}&tbm=isch"
+        #search_url = f"https://www.google.com/search?q={query}&tbm=isch"
+        search_url = f"https://www.google.com/search?as_st=y&as_q={keyword}&as_epq=&as_oq=Wallpaper&as_eq=&imgsz=xga&imgar=t%7Cxt&imgcolor=&imgtype=&cr=&as_sitesearch=&as_filetype=&tbs=&safe=active&udm=2"
         
         # Headers to mimic a browser request
         headers = {
@@ -125,7 +120,7 @@ class ImageDownloader:
         except Exception as e:
             print(f"Error occurred: {str(e)}")
             return []
-    def verify_image_urls(urls):
+    def verify_image_urls(self,urls):
         """
         Verify that the URLs actually point to accessible images
         
@@ -147,6 +142,7 @@ class ImageDownloader:
                 if 'image' in content_type:
                     verified_urls.append(url)
                     print(f"Verified URL: {url}")
+                    break
                 
             except Exception as e:
                 print(f"Failed to verify URL {url}: {str(e)}")
