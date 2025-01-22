@@ -168,10 +168,3 @@ if __name__ == "__main__":
     else:
         print("No image URLs found.")
 
-# Example usage in another Python file:
-
-# from image_downloader import ImageDownloader
-
-# downloader = ImageDownloader()
-# search_terms = ["nature", "mountains", "cats", "dogs"]
-# downloader.download_images(search_terms)
