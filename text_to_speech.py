@@ -1,6 +1,7 @@
 import pyttsx3
 import edge_tts
 from gtts import gTTS
+import asyncio
 import os
 from deep_translator import GoogleTranslator
 from langdetect import detect
@@ -64,7 +65,7 @@ class TextToSpeechGenerator:
         try:
             # Create gTTS object
             print(f"Generating audio using gTTS...")
-            tts = gTTS(text=text, lang=language, slow=False)
+            tts = gTTS(text=text, lang=language, slow=False, tld='com')
             
             # Save as MP3 first (gTTS only supports MP3)
             temp_mp3 = 'temp_output.mp3'
@@ -108,15 +109,24 @@ class TextToSpeechGenerator:
             
             # For Hindi text, use gTTS (better Hindi support)
             #if language == 'hi':
-            return self.generate_audio_gtts(text, 'en' , output_path)
-            
-            # # For English, use pyttsx3 (better voice gender control)
-            # else:
-            #     return self.generate_audio_pyttsx3(text, voice_gender, output_path)
+           # return self.generate_audio_gtts(text, 'en' , output_path)
+           # return( await self.generate_audio_edgetts(text, output_path))
+            #  return self.generate_audio_pyttsx3(text, voice_gender, output_path)
+            # Run the asynchronous task in the background
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            task = loop.create_task(self.generate_audio_edgetts(text, output_path))
+            loop.run_until_complete(task) 
+
+            # Handle potential exceptions
+            if task.exception():
+               return False, f"Error in speech generation: {str(task.exception)}"
+
+            return True, None 
                 
         except Exception as e:
             return False, f"Error in speech generation: {str(e)}"
-    async def generate_audio_edgetts(text,outputFilename):
+    async def generate_audio_edgetts(self,text,outputFilename):
             communicate = edge_tts.Communicate(text,"hi-IN-SwaraNeural")
             await communicate.save(outputFilename)
 

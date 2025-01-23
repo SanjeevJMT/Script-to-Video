@@ -3,6 +3,7 @@ from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, CompositeV
 #from moviepy.video.fx.transition_sequence import TransitionSequence----- no longer supported
 from moviepy.video import fx as vfx
 import glob
+import numpy as np
 from PIL import Image
 from tqdm import tqdm
 import logging
@@ -20,7 +21,7 @@ class VideoCreator:
     
     # Available transition effects
     TRANSITIONS = {
-        'fade': lambda clip: (FadeIn(clip, 0.5), FadeOut(clip, 0.5)),
+        #'fade': lambda clip: (FadeIn(clip, 0.5), FadeOut(clip, 0.5)),
         'slide_left': lambda clip: clip.set_position(lambda t: (max(0, 500-1000*t), 0)),
         'slide_right': lambda clip: clip.set_position(lambda t: (min(0, -500+1000*t), 0)),
         'zoom_in': lambda clip: clip.resize(lambda t: 1 + 0.5*t),
@@ -67,7 +68,7 @@ class VideoCreator:
                 image_files.extend(glob.glob(os.path.join(image_folder, f"*{format}")))
             
             if not image_files:
-                raise ValueError(f"No supported images found. Supported formats: {self.SUPPORTED_FORMATS}")
+                raise ValueError(f"No supported images found. Supported formats: {self.SUPPORTED_IMAGE_FORMATS}")
             
             # Sort images to ensure consistent ordering
             image_files.sort()
@@ -101,19 +102,15 @@ class VideoCreator:
             # Close the progress bar
             progress_bar.close()
                 
-            # Create transition clips (e.g., crossfade)
-            transition_duration = 1  # Duration of the transition between clips
-            final_clips = []
-            for i in range(len(image_clips) - 1):
-                final_clips.append(image_clips[i])
-                transition = image_clips[i].with_effects([vfx.CrossFadeIn(1), vfx.CrossFadeOut(1)])
-                final_clips.append(transition)       
-            final_clips.append(image_clips[-1])  # Add the last image clip
-            
-            logger.info("Compositing video clips...")
-            
-            # Concatenate all image clips
-            final_clip = concatenate_videoclips(image_clips, method="compose")
+            zoomed_clips = [
+                CompositeVideoClip([
+                    #clip.with_effects([vfx.Resize(lambda t : 1.3 + 0.3*np.sin(3*t/2))]) ----- working zoom in out
+                    clip.with_effects([vfx.Resize(lambda t : 1 + 0.05*t)])
+                    ])
+                for clip in image_clips
+            ]
+
+            final_clip = concatenate_videoclips(zoomed_clips, padding=-1)
             
             # If video is shorter than audio, loop the video
             if final_clip.duration < audio_duration:
@@ -184,7 +181,7 @@ class VideoCreator:
                 video_files.extend(glob.glob(os.path.join(video_folder, f"*{format}")))
             
             if not video_files:
-                raise ValueError(f"No supported video clips found. Supported formats: {self.SUPPORTED_FORMATS}")
+                raise ValueError(f"No supported video clips found. Supported formats: {self.SUPPORTED_VIDEO_FORMATS}")
             
             # Sort video clips to ensure consistent ordering
             video_files.sort()
@@ -256,31 +253,5 @@ class VideoCreator:
             logger.error(f"Video creator: An error occurred: in {traceback.extract_tb(e.__traceback__)[0]}:\n{str(e)}") 
             raise
 
-def print_supported_features():
-    """Print all supported features and options."""
-    print("\nSupported Features:")
-    print(f"Image Formats: {', '.join(VideoCreator.SUPPORTED_FORMATS)}")
-    print(f"Transition Effects: {', '.join(VideoCreator.TRANSITIONS.keys())}")
-    print("\nQuality Options:")
-    print("Resolution: Any width x height (default: 1920x1080)")
-    print("FPS: Any value (default: 30)")
-    print("Bitrate: Any value (default: 8000k)")
 
-if __name__ == "__main__":
-    # Example usage with all features
-    creator = VideoCreator()
-    
-    # Print supported features
-    print_supported_features()
-    
-    # Create video with all enhanced features
-    creator.create_video(
-        image_folder="./images",
-        audio_path="./audio.wav",
-        output_path="./output.mp4",
-        transition_duration=2,
-        transition_effect='fade',
-        resolution=(1920, 1080),
-        fps=30,
-        bitrate="8000k"
-    )
+
