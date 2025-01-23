@@ -52,7 +52,7 @@ class ImageDownloader:
 
             if verified_urls:
                 #create file name
-                filename = f'{idx:02d}_{term}.jpg'
+                filename = f'{idx:02d}.jpg'
                 filepath = os.path.join('temp', 'images', filename) 
                 retries = 0
                 #Download Image 
@@ -83,7 +83,7 @@ class ImageDownloader:
         print("keyword for search is - "+keyword)
         # Format the search URL
         #search_url = f"https://www.google.com/search?q={query}&tbm=isch"
-        search_url = f"https://www.google.com/search?as_st=y&as_q={keyword}&as_epq=&as_oq=Wallpaper&as_eq=&imgsz=xga&imgar=t%7Cxt&imgcolor=&imgtype=&cr=&as_sitesearch=&as_filetype=&tbs=&safe=active&udm=2"
+        search_url = f"https://www.google.com/search?as_st=y&as_q={keyword}&as_epq=&as_oq=&as_eq=&imgsz=xga&imgar=t%7Cxt&imgcolor=&imgtype=&cr=&as_sitesearch=&as_filetype=&tbs=&safe=active&udm=2"
         
         # Headers to mimic a browser request
         headers = {
@@ -111,7 +111,7 @@ class ImageDownloader:
                 if 'gstatic.com' not in url and 'google.com' not in url:
                     if url not in image_urls:  # Avoid duplicates
                         image_urls.append(url)
-                        print(f"Found image URL: {url}")
+                        #print(f"Found image URL: {url}")
                         if len(image_urls) >= num_images:
                             break
             
@@ -141,7 +141,7 @@ class ImageDownloader:
                 # Check if it's actually an image
                 if 'image' in content_type:
                     verified_urls.append(url)
-                    print(f"Verified URL: {url}")
+                    #print(f"Verified URL: {url}")
                     break
                 
             except Exception as e:
