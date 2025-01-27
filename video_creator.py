@@ -1,5 +1,5 @@
 import os
-from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, CompositeVideoClip, VideoFileClip
+from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, CompositeVideoClip, VideoFileClip , TextClip
 #from moviepy.video.fx.transition_sequence import TransitionSequence----- no longer supported
 from moviepy.video import fx as vfx
 import glob
@@ -8,6 +8,7 @@ from PIL import Image
 from tqdm import tqdm
 import logging
 import traceback
+import re
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -35,6 +36,7 @@ class VideoCreator:
                     image_folder, 
                     audio_path, 
                     output_path, 
+                    subtitles_path,
                     transition_duration=2,
                     transition_effect='zoom_in',
                     resolution=(1080, 1920),
@@ -56,10 +58,11 @@ class VideoCreator:
         try:
             logger.info("Starting video creation process...")
             
-            # Load audio and get its duration
+            # Load audio Subs and get its duration
             logger.info("Loading audio file...")
             audio = AudioFileClip(audio_path)
             audio_duration = audio.duration
+            subtitles_path =subtitles_path
             
 
             # Get list of all supported images in the folder
@@ -94,32 +97,50 @@ class VideoCreator:
                 # Create video clip from image
                 logger.info("Creating video clip from image..."+resized_image_path)
                 clip = ImageClip(resized_image_path).with_duration(image_duration)  # Set duration for each image
-                image_clips.append(clip)
+                zoomed_clip= clip.with_effects([vfx.Resize(lambda t : 1 + 0.05*t)]) #zoom clip over time
+                image_clips.append(zoomed_clip)
                     
                 # Update the progress bar
                 progress_bar.update(1)
 
             # Close the progress bar
             progress_bar.close()
-                
-            zoomed_clips = [
-                CompositeVideoClip([
-                    #clip.with_effects([vfx.Resize(lambda t : 1.3 + 0.3*np.sin(3*t/2))]) ----- working zoom in out
-                    clip.with_effects([vfx.Resize(lambda t : 1 + 0.05*t)])
-                    ])
-                for clip in image_clips
-            ]
 
-            final_clip = concatenate_videoclips(zoomed_clips, padding=-1)
+            #Load Subtitles 
+            subtitles =self.parse_srt(subtitles_path) 
+            # Create text clips from subtitles
+            subtitle_clips = self.create_text_clips(subtitles, video_size=resolution)
+
+            #add Fixed watermark Textclip
+            watermark_clip = TextClip(font ="Arial.ttf", text="MakeAIvideo.in", font_size=70, color='black',bg_color='rgb(255, 179, 255)', stroke_color='black', stroke_width=2, size=(500, None), method='caption', vertical_align='bottom')
+            watermark_clip = watermark_clip.with_start(0).with_duration(audio_duration).with_position(('right','bottom'))
+
+            #apply zoom effects in image clips   
+            # zoomed_clips = [
+            #     CompositeVideoClip([
+            #         #clip.with_effects([vfx.Resize(lambda t : 1.3 + 0.3*np.sin(3*t/2))]) ----- working zoom in out
+            #         clip.with_effects([vfx.Resize(lambda t : 1 + 0.05*t)])
+            #         ])
+            #     for clip in image_clips
+            # ]
+
+
+            final_clip = concatenate_videoclips(image_clips, padding=0)
+            # Combine the blank video and text clips
+            final_videoclip = CompositeVideoClip([final_clip] + subtitle_clips + [watermark_clip])
+
+            # final_clip = concatenate_videoclips(zoomed_clips, padding=0)
             
             # If video is shorter than audio, loop the video
-            if final_clip.duration < audio_duration:
-                n_loops = int(audio_duration / final_clip.duration) + 1
+            if final_videoclip.duration < audio_duration:
+                n_loops = int(audio_duration / final_videoclip.duration) + 1
                 logger.info(f"Looping video {n_loops} times to match audio duration")
-                final_clip = concatenate_videoclips([final_clip] * n_loops)
+                final_videoclip = concatenate_videoclips([final_videoclip] * n_loops)
             
             # Trim video to match audio duration
-            final_clip = final_clip.with_duration(audio_duration)
+            final_clip = final_videoclip.with_duration(audio_duration)
+
+            
             
             # Set audio
             final_clip = final_clip.with_audio(audio)
@@ -144,6 +165,35 @@ class VideoCreator:
         except Exception as e:
             logger.error(f"Video creator: An error occurred: in {traceback.extract_tb(e.__traceback__)[0]}:\n{str(e)}") 
             raise
+    def create_text_clips(self, subtitles, video_size):
+        text_clips = []
+        for start_time, end_time, text in subtitles:
+            duration = end_time - start_time
+            text_clip = TextClip(font ="DkBergelmir-GYBP.ttf", text=text, font_size=60,margin=(10,10), color='white',bg_color='white', stroke_color='black', stroke_width=2, size=(video_size[0], None), method='caption', vertical_align='bottom')
+            text_clip = text_clip.with_start(start_time).with_duration(duration).with_position(('center', int(video_size[1] * 0.7)))
+            text_clips.append(text_clip)
+        return text_clips
+    def parse_srt(self, srt_file):
+        with open(srt_file, 'r') as file:
+            content = file.read()
+
+        pattern = re.compile(r'(\d+)\n(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})\n(.*?)\n\n', re.DOTALL)
+        matches = pattern.findall(content)
+
+        subtitles = []
+        for match in matches:
+            index, start_time, end_time, text = match
+            start_time = self.convert_to_seconds(start_time)
+            end_time = self.convert_to_seconds(end_time)
+            subtitles.append((start_time, end_time, text.replace('\n', ' ')))
+
+        return subtitles
+
+    def convert_to_seconds(self, time_str):
+        """Convert time format 'HH:MM:SS,SSS' to seconds."""
+        h, m, s = time_str.split(':')
+        s, ms = s.split(',')
+        return int(h) * 3600 + int(m) * 60 + int(s) + int(ms) / 1000    
 
     def create_clip_video(self, 
                  video_folder='/temp/videos', 

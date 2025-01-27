@@ -219,6 +219,7 @@ class ScriptToVideo:
                 self.video_creator.create_image_video(
                     image_folder=self.folders['images'],
                     audio_path=audio_path,
+                    subtitles_path=subtitles_path,
                     output_path=output_video,
                     transition_duration=self.config['transition_duration'],
                     resolution=self.config['video_resolution']
