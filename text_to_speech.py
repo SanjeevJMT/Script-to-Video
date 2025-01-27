@@ -43,7 +43,7 @@ class TextToSpeechGenerator:
           "--pitch", "+10Hz",
           "--file", "prompt.txt",
           "--write-media", output_path,
-          "--write-subtitles", "subtitles.srt"
+          "--write-subtitles", subtitles_path
       ]
 
       # Run the command
