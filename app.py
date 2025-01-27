@@ -72,7 +72,8 @@ class ScriptToVideo:
             'output': self.config['output_folder'],
             'temp': self.config['temp_folder'],
             'audio': os.path.join(self.config['temp_folder'], 'audio'),
-            'images': os.path.join(self.config['temp_folder'], 'images')
+            'images': os.path.join(self.config['temp_folder'], 'images'),
+            'subtitles': os.path.join(self.config['temp_folder'], 'subtitles')
         }
         
         for folder in self.folders.values():
@@ -137,16 +138,21 @@ class ScriptToVideo:
             self.logger.info("Starting video creation process...")
             
             # Step 1: Generate audio from script
-            self.logger.info("Generating audio from script...")
+            self.logger.info("Generating audio and subtitles from script...")
             audio_path = os.path.join(
                 self.folders['audio'],
                 f"audio_{timestamp}.wav"
+            )
+            subtitles_path = os.path.join(
+                self.folders['subtitles'],
+                f"subtitles_{timestamp}.srt"
             )
             
             success, result = self.speech_generator.generate_speech(
                 script,
                 voice_gender=voice_gender,
                 output_path=audio_path,
+                subtitles_path=subtitles_path,
                 force_language=language
             )
             
