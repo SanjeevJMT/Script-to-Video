@@ -3,7 +3,6 @@ from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, CompositeV
 #from moviepy.video.fx.transition_sequence import TransitionSequence----- no longer supported
 from moviepy.video import fx as vfx
 import glob
-import numpy as np
 from PIL import Image
 from tqdm import tqdm
 import logging
@@ -85,15 +84,19 @@ class VideoCreator:
             image_clips = []
             for image_path in image_files:
                 # Verify image and resize to target resolution
-                with Image.open(image_path) as img:
-                    img = img.resize(resolution, Image.LANCZOS)
-                    img=img.convert('RGB')  # Convert to RGB mode
-                    # Extract the base name of the image file
-                    base_name = os.path.basename(image_path)
-                    # Create the new path in the temp/images directory
-                    resized_image_path = os.path.join('temp/images', 'resized_' + base_name)
-                    # Save the resized image to the new path
-                    img.save(resized_image_path)
+                try:
+                    with Image.open(image_path) as img:
+                        img = img.resize(resolution, Image.LANCZOS)
+                        img = img.convert('RGB')  # Convert to RGB mode
+                        # Extract the base name of the image file
+                        base_name = os.path.basename(image_path)
+                        # Create the new path in the temp/images directory
+                        resized_image_path = os.path.join('temp/images', 'resized_' + base_name)
+                        # Save the resized image to the new path
+                        img.save(resized_image_path)
+                except Exception as e:
+                    logger.error(f"Error processing image {image_path}: {str(e)}")
+                    continue
                 # Create video clip from image
                 logger.info("Creating video clip from image..."+resized_image_path)
                 clip = ImageClip(resized_image_path).with_duration(image_duration)  # Set duration for each image
@@ -169,7 +172,12 @@ class VideoCreator:
         text_clips = []
         for start_time, end_time, text in subtitles:
             duration = end_time - start_time
-            text_clip = TextClip(font ="DkBergelmir-GYBP.ttf", text=text, font_size=60,margin=(10,10), color='white',bg_color='white', stroke_color='black', stroke_width=2, size=(video_size[0], None), method='caption', vertical_align='bottom')
+            # Select font based on language
+            if re.search(r'[\u0900-\u097F]', text):  # Check if text contains Hindi characters
+                font = "TiroDevanagariHindi-Regular.ttf"
+            else:
+                font = "HussarBoldCondensed-mmrV.otf"
+            text_clip = TextClip(font=font, text=text, font_size=60, margin=(10,10), color='white', bg_color='white', stroke_color='black', stroke_width=2, size=(video_size[0], None), method='caption', vertical_align='bottom')
             text_clip = text_clip.with_start(start_time).with_duration(duration).with_position(('center', int(video_size[1] * 0.7)))
             text_clips.append(text_clip)
         return text_clips

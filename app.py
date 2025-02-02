@@ -82,9 +82,7 @@ class ScriptToVideo:
     def initialize_components(self):
         """Initialize all required components"""
         try:
-            # Initialize NLP components
-            nltk.download('punkt', quiet=True)
-            self.nlp = spacy.load('en_core_web_sm')
+           
             
             # Initialize other components
             self.speech_generator = TextToSpeechGenerator()
@@ -187,11 +185,7 @@ class ScriptToVideo:
             
             if method=='image':
                 # Download images
-                download_results = self.image_downloader.download_images(
-                    keywords[:images_needed],  # Use only as many keywords as needed
-                    num_results_per_term=1,
-                    max_retries=5
-                )
+              #
                 # if download_results['successful_downloads'] == 0:
                 #     raise Exception("No images were downloaded successfully")
             
@@ -201,6 +195,7 @@ class ScriptToVideo:
                 self.video_creator.create_image_video(
                     image_folder=self.folders['images'],
                     audio_path=audio_path,
+                    subtitles_path=subtitles_path,
                     output_path=output_video,
                     transition_duration=self.config['transition_duration'],
                     resolution=self.config['video_resolution']
