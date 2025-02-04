@@ -162,20 +162,20 @@ class ScriptToVideo:
             total_words = len(words)
             
             # Calculate the number of keywords
-            full_keywords_count = total_words // 5
-            remaining_words_count = total_words % 5
+            full_keywords_count = total_words // 10
+            remaining_words_count = total_words % 10
             
             # Initialize an empty list to store the keywords
             keywords = []
             
-            # Generate keywords for every 5 words
+            # Generate keywords for every 10 words
             for i in range(full_keywords_count):
-                keyword = ' '.join(words[i * 5:(i + 1) * 5])
+                keyword = ' '.join(words[i * 10:(i + 1) * 10])
                 keywords.append(keyword)
             
             # Generate a keyword for remaining words if any
             if remaining_words_count > 0:
-                keyword = ' '.join(words[full_keywords_count * 5:])
+                keyword = ' '.join(words[full_keywords_count * 10:])
                 keywords.append(keyword)
             
             self.logger.info(keywords)
