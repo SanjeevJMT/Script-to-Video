@@ -204,9 +204,10 @@ class VideoCreator:
         return int(h) * 3600 + int(m) * 60 + int(s) + int(ms) / 1000    
 
     def create_clip_video(self, 
-                 video_folder='/temp/videos', 
-                 audio_path='/temp/audio', 
-                 output_path='/output', 
+                 video_folder,  
+                 audio_path, 
+                 output_path, 
+                 subtitles_path,
                  transition_duration=2,
                  transition_effect='zoom_in',
                  target_resolution=(1080, 1920),
@@ -226,12 +227,13 @@ class VideoCreator:
         bitrate (str): Video bitrate (higher = better quality)
         """
         try:
-            logger.info("Starting video creation process...")
+            logger.info("Starting video creation process from videoClips...")
             
             # Load audio and get its duration
             logger.info("Loading audio file...")
             audio = AudioFileClip(audio_path)
             audio_duration = audio.duration
+            resolution= target_resolution
             
             # Get list of all supported video clips in the folder
             video_files = []
@@ -244,6 +246,7 @@ class VideoCreator:
             # Sort video clips to ensure consistent ordering
             video_files.sort()
             logger.info(f"Found {len(video_files)} video clips")
+            clip_duration= audio_duration/len(video_files)
             
             # Create progress bar for video clip processing
             progress_bar = tqdm(total=len(video_files), desc="Processing video clips")
@@ -256,39 +259,45 @@ class VideoCreator:
                 width, height = target_resolution
                 logger.info("Loading video clip... " + video_path)
                 clip = VideoFileClip(video_path) #.target_resolution(width=width, height=height)  # Resize to target resolution
-                clip = clip.with_duration(min(clip.duration, transition_duration))  # Set duration for each video clip
-                video_clips.append(clip)
+                clip = clip.with_duration(clip_duration)  # Set duration for each video clip
+                zoomed_clip= clip.with_effects([vfx.Resize(lambda t : 1 + 0.05*t)]) #zoom clip over time
+                video_clips.append(zoomed_clip)
                     
                 # Update the progress bar
                 progress_bar.update(1)
 
             # Close the progress bar
             progress_bar.close()
-                
-            # Create transition clips (e.g., crossfade)
-            final_clips = []
-            for i in range(len(video_clips) - 1):
-                final_clips.append(video_clips[i])
-                transition = video_clips[i].crossfadeout(transition_duration)
-                final_clips.append(transition)       
-            final_clips.append(video_clips[-1])  # Add the last video clip
-            
-            logger.info("Compositing video clips...")
-            
-            # Concatenate all video clips
-            final_clip = concatenate_videoclips(final_clips, method="compose")
+
+            #Load Subtitles 
+            subtitles =self.parse_srt(subtitles_path) 
+            # Create text clips from subtitles
+            subtitle_clips = self.create_text_clips(subtitles, video_size=resolution)
+
+            #add Fixed watermark Textclip
+            watermark_clip = TextClip(font ="Arial.ttf", text="MakeAIvideo.in", font_size=70, color='black',bg_color='rgb(255, 179, 255)', stroke_color='black', stroke_width=2, size=(500, None), method='caption', vertical_align='bottom')
+            watermark_clip = watermark_clip.with_start(0).with_duration(audio_duration).with_position(('right','bottom'))
+
+            ###########videoeffects_new
+            final_clip = concatenate_videoclips(video_clips, padding=0)
+            # Combine the blank video and text clips
+            final_videoclip = CompositeVideoClip([final_clip] + subtitle_clips + [watermark_clip])
+
+            # final_clip = concatenate_videoclips(zoomed_clips, padding=0)
             
             # If video is shorter than audio, loop the video
-            if final_clip.duration < audio_duration:
-                n_loops = int(audio_duration / final_clip.duration) + 1
+            if final_videoclip.duration < audio_duration:
+                n_loops = int(audio_duration / final_videoclip.duration) + 1
                 logger.info(f"Looping video {n_loops} times to match audio duration")
-                final_clip = concatenate_videoclips([final_clip] * n_loops)
+                final_videoclip = concatenate_videoclips([final_videoclip] * n_loops)
             
             # Trim video to match audio duration
-            final_clip = final_clip.subclip(0, audio_duration)
+            final_clip = final_videoclip.with_duration(audio_duration)
+
+            
             
             # Set audio
-            final_clip = final_clip.set_audio(audio)
+            final_clip = final_clip.with_audio(audio)
             
             logger.info("Writing output file... This may take a while.")
             # Write output file with progress bar
@@ -306,6 +315,49 @@ class VideoCreator:
             audio.close()
             
             logger.info(f"Video successfully created at: {output_path}")
+            ##############################
+                
+            # # Create transition clips (e.g., crossfade)
+            # final_clips = []
+            # for i in range(len(video_clips) - 1):
+            #     final_clips.append(video_clips[i])
+            #     transition = video_clips[i].crossfadeout(transition_duration)
+            #     final_clips.append(transition)       
+            # final_clips.append(video_clips[-1])  # Add the last video clip
+            
+            # logger.info("Compositing video clips...")
+            
+            # # Concatenate all video clips
+            # final_clip = concatenate_videoclips(final_clips, method="compose")
+            
+            # # If video is shorter than audio, loop the video
+            # if final_clip.duration < audio_duration:
+            #     n_loops = int(audio_duration / final_clip.duration) + 1
+            #     logger.info(f"Looping video {n_loops} times to match audio duration")
+            #     final_clip = concatenate_videoclips([final_clip] * n_loops)
+            
+            # # Trim video to match audio duration
+            # final_clip = final_clip.subclip(0, audio_duration)
+            
+            # # Set audio
+            # final_clip = final_clip.set_audio(audio)
+            
+            # logger.info("Writing output file... This may take a while.")
+            # # Write output file with progress bar
+            # final_clip.write_videofile(
+            #     output_path,
+            #     fps=fps,
+            #     codec='libx264',
+            #     audio_codec='aac',
+            #     bitrate=bitrate,
+            #     logger=None  # Disable moviepy's logger as we're using our own
+            # )
+            
+            # # Clean up
+            # final_clip.close()
+            # audio.close()
+            
+            # logger.info(f"Video successfully created at: {output_path}")
             
         except Exception as e:
             logger.error(f"Video creator: An error occurred: in {traceback.extract_tb(e.__traceback__)[0]}:\n{str(e)}") 

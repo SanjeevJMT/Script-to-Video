@@ -73,6 +73,7 @@ class ScriptToVideo:
             'temp': self.config['temp_folder'],
             'audio': os.path.join(self.config['temp_folder'], 'audio'),
             'images': os.path.join(self.config['temp_folder'], 'images'),
+            'videos': os.path.join(self.config['temp_folder'], 'videos'),
             'subtitles': os.path.join(self.config['temp_folder'], 'subtitles')
         }
         
@@ -203,6 +204,17 @@ class ScriptToVideo:
             elif method=='video':
                 # Download pexel videoClips
                 download_results = self.video_downloader.download_videos(keywords) 
+                # Step 3: Create video
+                self.logger.info("Finally creating video...")
+                self.video_creator.create_clip_video(
+                    video_folder=self.folders['videos'],
+                    audio_path=audio_path,
+                    subtitles_path=subtitles_path,
+                    output_path=output_video,
+                    transition_duration=self.config['transition_duration'],
+                    target_resolution=self.config['video_resolution']
+                )
+
             else :
                 #Download AI Image
                 self.image_downloader.create_images(keywords , topic)
