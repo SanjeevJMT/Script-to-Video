@@ -1,8 +1,10 @@
-moviepy,
-google_images_download,
-pyttsx3,
-gTTS,
-nltk,
-spacy,
-tqdm,
+moviepy==2.1.2
+google_images_download
+pyttsx3
+gTTS
+edge_tts
+nltk
+spacy
+tqdm
 requests
+deep_translator==1.9.0

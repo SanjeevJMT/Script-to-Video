@@ -72,7 +72,9 @@ class ScriptToVideo:
             'output': self.config['output_folder'],
             'temp': self.config['temp_folder'],
             'audio': os.path.join(self.config['temp_folder'], 'audio'),
-            'images': os.path.join(self.config['temp_folder'], 'images')
+            'images': os.path.join(self.config['temp_folder'], 'images'),
+            'videos': os.path.join(self.config['temp_folder'], 'videos'),
+            'subtitles': os.path.join(self.config['temp_folder'], 'subtitles')
         }
         
         for folder in self.folders.values():
@@ -81,9 +83,7 @@ class ScriptToVideo:
     def initialize_components(self):
         """Initialize all required components"""
         try:
-            # Initialize NLP components
-            nltk.download('punkt', quiet=True)
-            self.nlp = spacy.load('en_core_web_sm')
+           
             
             # Initialize other components
             self.speech_generator = TextToSpeechGenerator()
@@ -137,16 +137,21 @@ class ScriptToVideo:
             self.logger.info("Starting video creation process...")
             
             # Step 1: Generate audio from script
-            self.logger.info("Generating audio from script...")
+            self.logger.info("Generating audio and subtitles from script...")
             audio_path = os.path.join(
                 self.folders['audio'],
                 f"audio_{timestamp}.wav"
+            )
+            subtitles_path = os.path.join(
+                self.folders['subtitles'],
+                f"subtitles_{timestamp}.srt"
             )
             
             success, result = self.speech_generator.generate_speech(
                 script,
                 voice_gender=voice_gender,
                 output_path=audio_path,
+                subtitles_path=subtitles_path,
                 force_language=language
             )
             
@@ -158,20 +163,20 @@ class ScriptToVideo:
             total_words = len(words)
             
             # Calculate the number of keywords
-            full_keywords_count = total_words // 5
-            remaining_words_count = total_words % 5
+            full_keywords_count = total_words // 10
+            remaining_words_count = total_words % 10
             
             # Initialize an empty list to store the keywords
             keywords = []
             
-            # Generate keywords for every 5 words
+            # Generate keywords for every 10 words
             for i in range(full_keywords_count):
-                keyword = ' '.join(words[i * 5:(i + 1) * 5])
+                keyword = ' '.join(words[i * 10:(i + 1) * 10])
                 keywords.append(keyword)
             
             # Generate a keyword for remaining words if any
             if remaining_words_count > 0:
-                keyword = ' '.join(words[full_keywords_count * 5:])
+                keyword = ' '.join(words[full_keywords_count * 10:])
                 keywords.append(keyword)
             
             self.logger.info(keywords)
@@ -181,11 +186,7 @@ class ScriptToVideo:
             
             if method=='image':
                 # Download images
-                download_results = self.image_downloader.download_images(
-                    keywords[:images_needed],  # Use only as many keywords as needed
-                    num_results_per_term=1,
-                    max_retries=5
-                )
+              #
                 # if download_results['successful_downloads'] == 0:
                 #     raise Exception("No images were downloaded successfully")
             
@@ -195,6 +196,7 @@ class ScriptToVideo:
                 self.video_creator.create_image_video(
                     image_folder=self.folders['images'],
                     audio_path=audio_path,
+                    subtitles_path=subtitles_path,
                     output_path=output_video,
                     transition_duration=self.config['transition_duration'],
                     resolution=self.config['video_resolution']
@@ -202,6 +204,17 @@ class ScriptToVideo:
             elif method=='video':
                 # Download pexel videoClips
                 download_results = self.video_downloader.download_videos(keywords) 
+                # Step 3: Create video
+                self.logger.info("Finally creating video...")
+                self.video_creator.create_clip_video(
+                    video_folder=self.folders['videos'],
+                    audio_path=audio_path,
+                    subtitles_path=subtitles_path,
+                    output_path=output_video,
+                    transition_duration=self.config['transition_duration'],
+                    target_resolution=self.config['video_resolution']
+                )
+
             else :
                 #Download AI Image
                 self.image_downloader.create_images(keywords , topic)
@@ -213,6 +226,7 @@ class ScriptToVideo:
                 self.video_creator.create_image_video(
                     image_folder=self.folders['images'],
                     audio_path=audio_path,
+                    subtitles_path=subtitles_path,
                     output_path=output_video,
                     transition_duration=self.config['transition_duration'],
                     resolution=self.config['video_resolution']
