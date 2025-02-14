@@ -31,17 +31,16 @@ class TextToSpeechGenerator:
       if not output_path:
               timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
               output_path = f"speech_output_{timestamp}.wav"
-      # Read the text from prompt.txt file
-      with open('prompt.txt', 'r') as file:
-          text = file.read()
+      
+      story = text
 
       # Define the edge-tts command
       command = [
           "edge-tts",
-          "--voice", "hi-IN-SwaraNeural",
-          "--rate", "+30%",
+          "--voice", "hi-IN-MadhurNeural",
+          "--rate", "+15%",
           "--pitch", "+10Hz",
-          "--file", "prompt.txt",
+          "--text", story,
           "--write-media", output_path,
           "--write-subtitles", subtitles_path
       ]
