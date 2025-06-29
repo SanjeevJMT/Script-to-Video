@@ -37,8 +37,9 @@ class TextToSpeechGenerator:
       # Define the edge-tts command
       command = [
           "edge-tts",
-          "--voice", "hi-IN-MadhurNeural",
-          "--rate", "+15%",
+          #"--voice", "hi-IN-MadhurNeural",
+          "--voice", "en-US-AndrewMultilingualNeural",
+          "--rate", "+5%",
           "--pitch", "+10Hz",
           "--text", story,
           "--write-media", output_path,
